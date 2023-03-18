@@ -3,8 +3,6 @@ import type {
   InferGetServerSidePropsType,
 } from 'next'
 import { getProviders, signIn, useSession } from 'next-auth/react'
-import { getServerSession } from 'next-auth/next'
-import { authOptions } from './api/auth/[...nextauth]'
 import { useRouter } from 'next/router'
 import { useEffect } from 'react'
 import { Box, CircularProgress } from '@mui/material'
