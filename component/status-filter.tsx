@@ -6,31 +6,21 @@ import FormControl from '@mui/material/FormControl'
 import ListItemText from '@mui/material/ListItemText'
 import Select, { SelectChangeEvent } from '@mui/material/Select'
 import Checkbox from '@mui/material/Checkbox'
+import { TaskStatus } from '@/types/task-type'
 
-const ITEM_HEIGHT = 48
-const ITEM_PADDING_TOP = 8
-const MenuProps = {
-  PaperProps: {
-    style: {
-      maxHeight: ITEM_HEIGHT * 4.5 + ITEM_PADDING_TOP,
-      width: 250,
-    },
-  },
-}
+const labels = ['Open', 'In Progress', 'Done']
 
-const tags = ['Open', 'In Progress', 'Done']
-
-function LabelSelector(props: {
-  labels: string[]
-  setLabels: Dispatch<SetStateAction<string[]>>
+function StatusFilter(props: {
+  statusTags: TaskStatus[]
+  setStatusTags: Dispatch<SetStateAction<TaskStatus[]>>
 }) {
-  const { labels, setLabels } = props
+  const { statusTags, setStatusTags } = props
 
-  const handleChange = (event: SelectChangeEvent<typeof labels>) => {
+  const handleChange = (event: SelectChangeEvent<string[]>) => {
     const {
       target: { value },
     } = event
-    setLabels(typeof value === 'string' ? value.split(',') : value)
+    setStatusTags(value as TaskStatus[])
   }
 
   return (
@@ -39,16 +29,15 @@ function LabelSelector(props: {
         <InputLabel>Status</InputLabel>
         <Select
           multiple
-          value={labels}
+          value={statusTags as string[]}
           onChange={handleChange}
           input={<OutlinedInput label="Tag" />}
           renderValue={(selected) => selected.join(', ')}
-          MenuProps={MenuProps}
         >
-          {tags.map((tag) => (
-            <MenuItem key={tag} value={tag}>
-              <Checkbox checked={labels.indexOf(tag) > -1} />
-              <ListItemText primary={tag} />
+          {labels.map((label) => (
+            <MenuItem key={label} value={label}>
+              <Checkbox checked={statusTags.includes(label as TaskStatus)} />
+              <ListItemText primary={label} />
             </MenuItem>
           ))}
         </Select>
@@ -57,4 +46,4 @@ function LabelSelector(props: {
   )
 }
 
-export default LabelSelector
+export default StatusFilter

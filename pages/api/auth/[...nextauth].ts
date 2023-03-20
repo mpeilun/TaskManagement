@@ -2,13 +2,15 @@ import NextAuth, { Account, JWT, Profile, Session, User } from 'next-auth'
 import { AdapterUser } from 'next-auth/adapters'
 import GithubProvider from 'next-auth/providers/github'
 
+const REPO = process.env.GITHUB_REPO
+
 export const authOptions = {
   providers: [
     GithubProvider({
       clientId: process.env.GITHUB_ID!,
       clientSecret: process.env.GITHUB_SECRET!,
       authorization: {
-        params: { scope: 'repo' },
+        params: { scope: `repo` },
       },
     }),
   ],

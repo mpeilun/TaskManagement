@@ -1,19 +1,33 @@
-import LabelSelector from '@/component/label-selector'
+import StatusSelector from '@/component/status-filter'
 import TaskAdding from '@/component/task/task-adding'
 import TaskCard from '@/component/task/task-card'
-import { Task } from '@/types/task-type'
+import { Task, TaskStatus } from '@/types/task-type'
 import {
   Box,
   Button,
   Typography,
   CircularProgress,
   Switch,
+  IconButton,
+  InputAdornment,
+  TextField,
 } from '@mui/material'
 import { signOut, useSession } from 'next-auth/react'
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState } from 'react'
 import InfiniteScroll from 'react-infinite-scroll-component'
 import Notification from '@/component/notification'
 import { Severity } from '@/types/notification-type'
+import { addIssue, searchIssue } from '@/util/github-api'
+import {
+  handelAllTaskFetchResponse,
+  handelTaskFetchResponse,
+} from '@/util/validate'
+import { grey } from '@mui/material/colors'
+import GitHubIcon from '@mui/icons-material/GitHub'
+import SortIcon from '@mui/icons-material/Sort'
+import SearchIcon from '@mui/icons-material/Search'
+
+const REPO = process.env.GITHUB_REPO
 
 function HomePage() {
   const { data: session } = useSession()
@@ -28,7 +42,11 @@ function HomePage() {
 
   // TaskCard State
   const [isAdding, setIsAdding] = useState(false)
-  const [labels, setLabels] = useState(['Open', 'In Progress', 'Done'])
+  const [statusTags, setStatusTags] = useState<TaskStatus[]>([
+    'Open',
+    'In Progress',
+    'Done',
+  ])
   const [sortReverse, setSortReverse] = useState(false)
 
   // Notification State
@@ -43,30 +61,27 @@ function HomePage() {
     setNotificationMessage(message)
   }
 
+  //Search State
+  const [search, setSearch] = useState('')
+
   // Handel TaskTaskChange
-  const handelAddTask = async (title: string, body: string) => {
-    const pushTask = {
-      title: title,
-      body: body,
-      state: 'open',
-      labels: ['Open'],
-    }
-    const response = await fetch(
-      'https://api.github.com/repos/mpeilun/IssueSearch/issues',
-      {
-        method: 'POST',
-        headers: {
-          Accept: 'application/vnd.github+json',
-          Authorization: `Bearer ${session?.accessToken}`,
-        },
-        body: JSON.stringify(pushTask),
-      }
+  const handelAddTask = async (
+    title: string,
+    body: string,
+    status: TaskStatus
+  ) => {
+    const response = await addIssue(
+      REPO!,
+      session?.accessToken!,
+      title,
+      body,
+      status
     )
 
     if (response.status != 201) {
       return false
     } else {
-      const result = (await response.json()) as Task
+      const result = await handelTaskFetchResponse(response)
       setTaskList((prev) => [result, ...prev])
       return true
     }
@@ -79,7 +94,7 @@ function HomePage() {
   const handelTitleChange = (issuesNum: number, title: string) => {
     setTaskList((prev) =>
       prev.map((task) => {
-        if (task.number === issuesNum) {
+        if (task.number == issuesNum) {
           task.title = title
         }
         return task
@@ -90,7 +105,7 @@ function HomePage() {
   const handelBodyChange = (issuesNum: number, body: string) => {
     setTaskList((prev) =>
       prev.map((task) => {
-        if (task.number === issuesNum) {
+        if (task.number == issuesNum) {
           task.body = body
         }
         return task
@@ -98,24 +113,32 @@ function HomePage() {
     )
   }
 
+  const handelStatusChange = (issuesNum: number, status: TaskStatus) => {
+    setTaskList((prev) =>
+      prev.map((task) => {
+        if (task.number == issuesNum) {
+          task.status = status
+        }
+        return task
+      })
+    )
+  }
+
+  const handelSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSearch(event.target.value)
+  }
+
   // Data Fetching
   const fetchIssues = async (perPage: number) => {
     if (loading) return
-
     setLoading(true)
-
-    const queries = [`order=desc`, `per_page=${perPage}`, `page=${nextPageNum}`]
-
-    const queryString = queries.join('&')
-    const response = await fetch(
-      `https://api.github.com/repos/mpeilun/IssueSearch/issues?${queryString}`
-    )
+    const response = await searchIssue(REPO!, perPage, nextPageNum)
 
     if (!response.ok) {
       throw new Error('Failed to retrieve issues.')
     }
 
-    const data: Task[] = await response.json()
+    const data: Task[] = await handelAllTaskFetchResponse(response)
 
     if (data && data.length > 0) {
       setTaskList((prev) => [...prev, ...data])
@@ -133,106 +156,155 @@ function HomePage() {
     if (session && taskList.length === 0) {
       fetchIssues(10)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session])
 
   // TaskCards
   const TaskList = taskList.map((task) => (
     <TaskCard
       key={task.number}
+      repo={REPO!}
+      search={search}
       task={task}
+      statusTags={statusTags}
       deleteTask={handelDeleteTask}
       editTitle={handelTitleChange}
       editBody={handelBodyChange}
-      labels={labels}
+      editStatus={handelStatusChange}
       sendNotification={sendNotification}
     />
   ))
 
+  if (REPO == undefined) {
+    return (
+      <Box>
+        <Typography variant="h5" textAlign={'center'} color={'error'}>
+          Please setting GITHUB_REPO in env!
+        </Typography>
+      </Box>
+    )
+  }
+
   return (
     <Box
-      width={'vh'}
+      sx={{ width: { md: '600px', sm: '400px', xs: '400px' } }}
       display="flex"
       flexDirection={'column'}
-      justifyContent="center"
+      justifyContent={'center'}
+      alignItems={'center'}
       padding={3}
+      margin={'auto'}
     >
       {session ? (
-        <Box
-          display="flex"
-          sx={{ flexDirection: 'column', justifyContent: 'center' }}
-        >
-          <Typography>Name: {session?.user?.name}</Typography>
-          <Typography>AccessToken: {session?.accessToken}</Typography>
-          <Button variant="outlined" sx={{ m: 2 }} onClick={() => signOut()}>
-            登出
-          </Button>
-        </Box>
+        <>
+          <StatusSelector
+            statusTags={statusTags}
+            setStatusTags={setStatusTags}
+          />
+          <TextField
+            sx={{
+              marginTop: '8px',
+              minWidth: { md: '600px', sm: '400px', xs: '400px' },
+              '& .MuiFormHelperText-root': {
+                textAlign: 'end !important',
+              },
+            }}
+            fullWidth
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon />
+                </InputAdornment>
+              ),
+            }}
+            label="Search"
+            value={search}
+            helperText="Search by title, content, owner"
+            onChange={handelSearchChange}
+          ></TextField>
+          <Box display={'flex'} flexDirection={'row'} alignItems={'center'}>
+            <Typography>new to old</Typography>
+            <Switch
+              value={sortReverse}
+              onChange={(even) => setSortReverse(even.target.checked)}
+            />
+            <Typography>old to new</Typography>
+          </Box>
+          {!isAdding && (
+            <Button
+              sx={{
+                minWidth: { md: '600px', sm: '400px', xs: '400px' },
+                margin: '8px 0px',
+              }}
+              fullWidth
+              variant="contained"
+              onClick={() => {
+                setIsAdding(true)
+              }}
+            >
+              Add Task
+            </Button>
+          )}
+          {isAdding && (
+            <TaskAdding
+              statusTags={statusTags}
+              addTask={handelAddTask}
+              setIsAdding={setIsAdding}
+              sendNotification={sendNotification}
+            />
+          )}
+          {taskList && (
+            <>
+              <InfiniteScroll
+                style={{ overflow: 'hidden' }}
+                dataLength={taskList.length}
+                next={() => fetchIssues(10)}
+                hasMore={hasMore}
+                loader={
+                  loading && (
+                    <CircularProgress
+                      sx={{ display: 'flex', margin: '16px auto' }}
+                    />
+                  )
+                }
+                endMessage={
+                  <Typography
+                    textAlign={'center'}
+                    margin={'8px auto 4px auto'}
+                    color={grey}
+                  >
+                    You have reached the bottom!
+                  </Typography>
+                }
+              >
+                <Box
+                  display={'flex'}
+                  flexDirection={'column'}
+                  alignItems={'center'}
+                >
+                  {sortReverse ? TaskList.reverse() : TaskList}
+                </Box>
+              </InfiniteScroll>
+            </>
+          )}
+        </>
       ) : (
         <>
+          {/* SignIn */}
           <Button
             variant="outlined"
-            sx={{ m: 2 }}
+            color="github"
+            sx={{ m: 2, color: 'black', borderColor: 'black' }}
             onClick={() => {
               window.open('/signin', 'Sign In', 'width=600,height=600')
             }}
           >
-            登入
+            {<GitHubIcon sx={{ mr: '8px' }} />}
+            Sign in with Github
           </Button>
         </>
       )}
-      <Button
-        onClick={() => {
-          setIsAdding(true)
-        }}
-      >
-        Add Task
-      </Button>
-      {isAdding && (
-        <TaskAdding
-          addTask={handelAddTask}
-          setIsAdding={setIsAdding}
-          sendNotification={sendNotification}
-        />
-      )}
-      <LabelSelector labels={labels} setLabels={setLabels} />
-      <Box display={'flex'} flexDirection={'row'}>
-        <Typography>新-舊</Typography>
-        <Switch
-          value={sortReverse}
-          onChange={(even) => setSortReverse(even.target.checked)}
-        />
-        <Typography>舊-新</Typography>
-      </Box>
-      {taskList && (
-        <>
-          <InfiniteScroll
-            style={{ overflowY: 'hidden' }}
-            dataLength={taskList.length} //This is important field to render the next data
-            next={() => fetchIssues(10)}
-            hasMore={hasMore}
-            loader={<CircularProgress sx={{ margin: '0 auto 0 auto' }} />}
-            endMessage={
-              <Typography textAlign={'center'}>你已經滑到最底囉！</Typography>
-            }
-            // refreshFunction={() => fetchIssues(10)}
-            // pullDownToRefresh={true}
-            // pullDownToRefreshThreshold={50}
-            // pullDownToRefreshContent={
-            //   <h3 style={{ textAlign: 'center' }}>
-            //     &#8595; Pull down to refresh
-            //   </h3>
-            // }
-            // releaseToRefreshContent={
-            //   <h3 style={{ textAlign: 'center' }}>
-            //     &#8593; Release to refresh
-            //   </h3>
-            // }
-          >
-            {sortReverse ? TaskList.reverse() : TaskList}
-          </InfiniteScroll>
-        </>
-      )}
+
+      {/* Notification */}
       <Notification
         open={notificationOpen}
         severity={notificationSeverity}

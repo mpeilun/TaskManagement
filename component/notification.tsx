@@ -1,8 +1,7 @@
-import { useState, forwardRef, Dispatch, SetStateAction } from 'react'
+import { forwardRef, Dispatch, SetStateAction } from 'react'
 import Snackbar from '@mui/material/Snackbar'
 import MuiAlert, { AlertProps } from '@mui/material/Alert'
 import { Severity } from '@/types/notification-type'
-import { Duration } from '@mui/material'
 
 const Alert = forwardRef<HTMLDivElement, AlertProps>(function Alert(
   props,

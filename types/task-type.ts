@@ -1,4 +1,4 @@
-type label = {
+type Label = {
   id: number
   node_id: string
   name: string
@@ -8,9 +8,16 @@ type label = {
   default: boolean
 }
 
+type UserInfo = {
+  avatar_url: string
+  html_url: string
+  id: string
+  login: string
+}
+
 export interface Task {
-  created_at: Date
-  // owner: string
+  created_at: string
+  user: UserInfo
   // repo: string
   number: number
   title: string
@@ -19,6 +26,9 @@ export interface Task {
   state: 'open' | 'closed'
   // state_reason?: 'completed' | 'not_planned' | 'reopened' | null
   // milestone?: string | number | null
-  labels?: label[]
+  labels?: Label[]
+  status: TaskStatus
   // assignees?: string[]
 }
+
+export type TaskStatus = 'Open' | 'In Progress' | 'Done' | undefined

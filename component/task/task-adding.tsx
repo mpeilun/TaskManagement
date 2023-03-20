@@ -3,13 +3,17 @@ import { validateBody, validateTitle } from '@/util/validate'
 import { Box, Button, Card, TextField } from '@mui/material'
 import { LoadingButton } from '@mui/lab'
 import { ChangeEvent, Dispatch, SetStateAction, useState } from 'react'
+import TaskStatusSelector from './task-status-selector'
+import { TaskStatus } from '@/types/task-type'
 
 function TaskAdding(props: {
-  addTask: (title: string, body: string) => Promise<boolean>
+  statusTags: TaskStatus[]
+  addTask: (title: string, body: string, status: TaskStatus) => Promise<boolean>
   setIsAdding: Dispatch<SetStateAction<boolean>>
   sendNotification: (message: string, severity: Severity) => void
 }) {
-  const { addTask, setIsAdding, sendNotification } = props
+  const { statusTags, addTask, setIsAdding, sendNotification } = props
+  const [status, setStatus] = useState<TaskStatus>('Open')
   const [title, setTitle] = useState('')
   const [body, setBody] = useState('')
   const [titleError, setTitleError] = useState(false)
@@ -35,54 +39,68 @@ function TaskAdding(props: {
         display: 'flex',
         flexDirection: 'column',
         margin: 1,
-        padding: 1,
-        maxWidth: '440px',
+        padding: 3,
+        width: { md: '600px', sm: '400px', xs: '400px' },
       }}
     >
       <TextField
+        fullWidth
         error={titleError}
-        helperText={titleError ? '標題不能為空' : null}
-        sx={{ margin: 1 }}
-        label="標題"
+        helperText={titleError ? 'Title cannot be empty.' : null}
+        sx={{ margin: '8px 0' }}
+        label="Title"
         value={title}
         onChange={handelTitleChange}
       />
       <TextField
+        fullWidth
+        multiline
         error={bodyError}
-        helperText={bodyError ? '內容需 30 字以上' : null}
-        sx={{ margin: 1 }}
-        label="內容"
+        helperText={
+          bodyError
+            ? 'The content needs to be more than 30 characters long.'
+            : null
+        }
+        sx={{ margin: '8px 0' }}
+        label="Content"
         value={body}
         onChange={handelBodyChange}
       />
-      <Box display={'flex'} flexDirection={'row'}>
+      <TaskStatusSelector
+        value={status}
+        onValueChange={(value) => setStatus(value)}
+      />
+      <Box display={'flex'} flexDirection={'row'} justifyContent={'flex-end'}>
         <Button
+          sx={{ marginRight: '8px' }}
+          variant="outlined"
           onClick={() => {
             setIsAdding(false)
           }}
         >
-          取消
+          Cancel
         </Button>
         <LoadingButton
+          variant="outlined"
           loading={saveButtonLoading}
           onClick={async () => {
             if (validateTitle(title) || validateBody(body)) {
               setTitleError(validateTitle(title))
               setBodyError(validateBody(body))
-              sendNotification('標題或內容格式錯誤', 'error')
+              sendNotification('Invalid title or content format.', 'error')
             } else {
               setSaveButtonLoading(true)
-              if (await addTask(title, body)) {
+              if (await addTask(title, body, status)) {
                 setIsAdding(false)
-                sendNotification('新增成功', 'success')
+                sendNotification('Add Successful', 'success')
               } else {
-                sendNotification('新增失敗', 'error')
+                sendNotification('Add Failed', 'error')
               }
               setSaveButtonLoading(false)
             }
           }}
         >
-          新增
+          Add
         </LoadingButton>
       </Box>
     </Card>
