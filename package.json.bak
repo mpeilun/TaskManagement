@@ -1,5 +1,5 @@
 {
-  "name": "frontend-intern-2023",
+  "name": "task-manager",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -14,11 +14,13 @@
     "@mui/icons-material": "^5.11.11",
     "@mui/lab": "^5.0.0-alpha.123",
     "@mui/material": "^5.11.13",
+    "@next/font": "^13.2.4",
     "@types/node": "18.15.3",
     "@types/react": "18.0.28",
     "@types/react-dom": "18.0.11",
     "eslint": "8.36.0",
     "eslint-config-next": "13.2.4",
+    "moment": "^2.29.4",
     "next": "13.2.4",
     "next-auth": "^4.20.1",
     "react": "18.2.0",
