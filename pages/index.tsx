@@ -1,4 +1,4 @@
-import StatusSelector from '@/component/status-filter'
+import StatusFilter from '@/component/status-filter'
 import TaskAdding from '@/component/task/task-adding'
 import TaskCard from '@/component/task/task-card'
 import { Task, TaskStatus } from '@/types/task-type'
@@ -11,6 +11,10 @@ import {
   IconButton,
   InputAdornment,
   TextField,
+  Card,
+  Collapse,
+  Divider,
+  Tooltip,
 } from '@mui/material'
 import { signOut, useSession } from 'next-auth/react'
 import { useEffect, useState } from 'react'
@@ -24,8 +28,9 @@ import {
 } from '@/util/validate'
 import { grey } from '@mui/material/colors'
 import GitHubIcon from '@mui/icons-material/GitHub'
-import SortIcon from '@mui/icons-material/Sort'
+import FilterListIcon from '@mui/icons-material/FilterList'
 import SearchIcon from '@mui/icons-material/Search'
+import { textAlign } from '@mui/system'
 
 const REPO = process.env.GITHUB_REPO
 
@@ -54,15 +59,24 @@ function HomePage() {
   const [notificationSeverity, setNotificationSeverity] =
     useState<Severity>('info')
   const [notificationMessage, setNotificationMessage] = useState('')
+  const [notificationMaintain, setNotificationMaintain] = useState(false)
 
-  const sendNotification = (message: string, severity: Severity) => {
+  const sendNotification = (
+    message: string,
+    severity: Severity,
+    maintain?: boolean
+  ) => {
     setNotificationOpen(true)
     setNotificationSeverity(severity)
     setNotificationMessage(message)
+    setNotificationMaintain(maintain ?? false)
   }
 
-  //Search State
+  // Search State
   const [search, setSearch] = useState('')
+
+  // Filter State
+  const [filterExpanded, setFilterExpanded] = useState(false)
 
   // Handel TaskTaskChange
   const handelAddTask = async (
@@ -128,14 +142,29 @@ function HomePage() {
     setSearch(event.target.value)
   }
 
+  const handleExpandClick = () => {
+    setFilterExpanded(!filterExpanded)
+  }
+
   // Data Fetching
   const fetchIssues = async (perPage: number) => {
     if (loading) return
     setLoading(true)
-    const response = await searchIssue(REPO!, perPage, nextPageNum)
+    const response = await searchIssue(
+      REPO!,
+      session?.accessToken!,
+      perPage,
+      nextPageNum
+    )
 
     if (!response.ok) {
-      throw new Error('Failed to retrieve issues.')
+      setLoading(false)
+      sendNotification(
+        `The ${REPO} repo is private. Add account to collaborator or make project public`,
+        'error',
+        true
+      )
+      return
     }
 
     const data: Task[] = await handelAllTaskFetchResponse(response)
@@ -196,39 +225,83 @@ function HomePage() {
     >
       {session ? (
         <>
-          <StatusSelector
-            statusTags={statusTags}
-            setStatusTags={setStatusTags}
-          />
-          <TextField
-            sx={{
-              marginTop: '8px',
-              minWidth: { md: '600px', sm: '400px', xs: '400px' },
-              '& .MuiFormHelperText-root': {
-                textAlign: 'end !important',
-              },
-            }}
-            fullWidth
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon />
-                </InputAdornment>
-              ),
-            }}
-            label="Search"
-            value={search}
-            helperText="Search by title, content, owner"
-            onChange={handelSearchChange}
-          ></TextField>
-          <Box display={'flex'} flexDirection={'row'} alignItems={'center'}>
-            <Typography>new to old</Typography>
-            <Switch
-              value={sortReverse}
-              onChange={(even) => setSortReverse(even.target.checked)}
-            />
-            <Typography>old to new</Typography>
+          <Box
+            display={'flex'}
+            flexDirection={'row'}
+            sx={{ minWidth: { md: '600px', sm: '400px', xs: '400px' } }}
+          >
+            <Card
+              sx={{
+                padding: 3,
+                width: { md: '600px', sm: '400px', xs: '400px' },
+              }}
+            >
+              {/* Search bar */}
+              <TextField
+                fullWidth
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon />
+                    </InputAdornment>
+                  ),
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <Tooltip title={'Filter'}>
+                        <IconButton
+                          sx={{
+                            transform: !filterExpanded
+                              ? 'rotate(0deg)'
+                              : 'rotate(180deg)',
+                            transition: (theme) =>
+                              theme.transitions.create('transform', {
+                                duration: theme.transitions.duration.shortest,
+                              }),
+                          }}
+                          onClick={() => {
+                            handleExpandClick()
+                          }}
+                        >
+                          <FilterListIcon />
+                        </IconButton>
+                      </Tooltip>
+                    </InputAdornment>
+                  ),
+                }}
+                label="Search"
+                value={search}
+                helperText="Search by title, content, owner"
+                onChange={handelSearchChange}
+              ></TextField>
+              <Divider sx={{ margin: '8px 0' }} />
+              <Collapse in={filterExpanded} timeout="auto" unmountOnExit>
+                {/* Filter by status */}
+                <StatusFilter
+                  statusTags={statusTags}
+                  setStatusTags={setStatusTags}
+                />
+                {/* Sort by time */}
+                <Box
+                  sx={{ padding: 1 }}
+                  display={'flex'}
+                  flexDirection={'row'}
+                  alignItems={'center'}
+                >
+                  <Typography color={!sortReverse ? 'primary.main' : 'inherit'}>
+                    Newest to Oldest
+                  </Typography>
+                  <Switch
+                    value={sortReverse}
+                    onChange={(even) => setSortReverse(even.target.checked)}
+                  />
+                  <Typography color={sortReverse ? 'primary.main' : 'inherit'}>
+                    Oldest to Newest
+                  </Typography>
+                </Box>
+              </Collapse>
+            </Card>
           </Box>
+
           {!isAdding && (
             <Button
               sx={{
@@ -310,6 +383,7 @@ function HomePage() {
         severity={notificationSeverity}
         message={notificationMessage}
         setOpen={setNotificationOpen}
+        maintain={notificationMaintain}
       />
     </Box>
   )

@@ -15,8 +15,9 @@ function Notification(props: {
   setOpen: Dispatch<SetStateAction<boolean>>
   severity: Severity
   message: string
+  maintain?: boolean
 }) {
-  const { open, severity, message, setOpen } = props
+  const { open, severity, message, setOpen, maintain } = props
 
   const handleClose = () => {
     setOpen(false)
@@ -25,7 +26,7 @@ function Notification(props: {
   return (
     <Snackbar
       open={open}
-      autoHideDuration={1500}
+      autoHideDuration={maintain ? null : 3000}
       onClose={handleClose}
       anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
     >

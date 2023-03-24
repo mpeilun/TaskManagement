@@ -25,7 +25,7 @@ function StatusFilter(props: {
 
   return (
     <div>
-      <FormControl sx={{ m: 1, width: 300 }}>
+      <FormControl sx={{ width: '100%', marginTop: '8px' }}>
         <InputLabel>Status</InputLabel>
         <Select
           multiple

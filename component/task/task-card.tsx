@@ -147,10 +147,6 @@ function TaskCard(props: {
           <MenuItem
             onClick={() => {
               handleCloseEditMenu()
-              if (session?.user.id != task.user.id) {
-                sendNotification('只能編輯自己的任務', 'error')
-                return
-              }
               setIsEditing(true)
             }}
           >
@@ -160,18 +156,22 @@ function TaskCard(props: {
           {/* Delete Button */}
           <MenuItem
             onClick={async () => {
-              if (session?.user.id != task.user.id) {
-                sendNotification('只能刪除自己的任務', 'error')
-                return
-              }
               setDeleteButtonLoading(true)
               await closeIssue(repo, session?.accessToken!, task.number).then(
                 (response) => {
                   if (response.status == 200) {
                     deleteTask(task.number)
-                    sendNotification('刪除成功', 'success')
+                    sendNotification('Delete Successful', 'success')
+                  } else if (response.status == 403) {
+                    sendNotification(
+                      'To modify this task, you must be the poster or a collaborator of the repo.',
+                      'warning'
+                    )
                   } else {
-                    sendNotification('刪除失敗', 'error')
+                    sendNotification(
+                      `Delete Failed, status:${response.status}`,
+                      'error'
+                    )
                   }
                   setDeleteButtonLoading(false)
                 }
@@ -266,7 +266,6 @@ function TaskCard(props: {
       )}
       {isEditing && (
         <Box display={'flex'} flexDirection={'row'} justifyContent={'flex-end'}>
-          {/* TODO USE ButtonGroup?? */}
           <Button
             sx={{ marginRight: '8px' }}
             variant="outlined"
@@ -304,6 +303,11 @@ function TaskCard(props: {
                     editStatus(task.number, status)
                     setIsEditing(false)
                     sendNotification('Edit Successful.', 'success')
+                  } else if (response.status == 403) {
+                    sendNotification(
+                      'To modify this task, you must be the poster or a collaborator of the repo.',
+                      'warning'
+                    )
                   } else {
                     sendNotification('Edit Failed.', 'error')
                   }

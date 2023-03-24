@@ -27,13 +27,20 @@ export async function addLabel(
 
 export async function searchIssue(
   repo: string,
+  accessToken: string,
   perPage: number,
   nextPageNum: number
 ): Promise<Response> {
   const queries = [`order=desc`, `per_page=${perPage}`, `page=${nextPageNum}`]
   const queryString = queries.join('&')
   return await fetch(
-    `https://api.github.com/repos/${repo}/issues?${queryString}`
+    `https://api.github.com/repos/${repo}/issues?${queryString}`,
+    {
+      headers: {
+        Accept: 'application/vnd.github+json',
+        Authorization: `Bearer ${accessToken}`,
+      },
+    }
   )
 }
 
