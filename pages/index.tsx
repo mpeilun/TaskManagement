@@ -17,7 +17,7 @@ import {
   Tooltip,
 } from '@mui/material'
 import { signOut, useSession } from 'next-auth/react'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import InfiniteScroll from 'react-infinite-scroll-component'
 import Notification from '@/component/notification'
 import { Severity } from '@/types/notification-type'
@@ -30,15 +30,15 @@ import { grey } from '@mui/material/colors'
 import GitHubIcon from '@mui/icons-material/GitHub'
 import FilterListIcon from '@mui/icons-material/FilterList'
 import SearchIcon from '@mui/icons-material/Search'
-import { textAlign } from '@mui/system'
 
+const DEBUG = false
 const REPO = process.env.GITHUB_REPO
 
 function HomePage() {
   const { data: session } = useSession()
 
   // Data State
-  const [taskList, setTaskList] = useState<Task[]>([])
+  const [taskData, setTaskData] = useState<Task[]>([])
 
   // Loading State
   const [nextPageNum, setNextPageNum] = useState(1)
@@ -46,6 +46,8 @@ function HomePage() {
   const [hasMore, setHasMore] = useState(true)
 
   // TaskCard State
+  const [taskCardList, setTaskCardList] = useState<JSX.Element[]>([])
+  const [tasksLength, setTasksLength] = useState(0)
   const [isAdding, setIsAdding] = useState(false)
   const [statusTags, setStatusTags] = useState<TaskStatus[]>([
     'Open',
@@ -79,64 +81,78 @@ function HomePage() {
   const [filterExpanded, setFilterExpanded] = useState(false)
 
   // Handel TaskTaskChange
-  const handelAddTask = async (
-    title: string,
-    body: string,
-    status: TaskStatus
-  ) => {
-    const response = await addIssue(
-      REPO!,
-      session?.accessToken!,
-      title,
-      body,
-      status
-    )
+  const handelAddTask = useCallback(
+    async (title: string, body: string, status: TaskStatus) => {
+      const response = await addIssue(
+        REPO!,
+        session?.accessToken!,
+        title,
+        body,
+        status
+      )
 
-    if (response.status != 201) {
-      return false
-    } else {
-      const result = await handelTaskFetchResponse(response)
-      setTaskList((prev) => [result, ...prev])
-      return true
-    }
-  }
+      if (response.status != 201) {
+        return false
+      } else {
+        const result = await handelTaskFetchResponse(response)
+        console.log('add', result)
+        setTaskData((prev) => [result, ...prev])
+        setTasksLength((prev) => prev + 1)
+        return true
+      }
+    },
+    [session, setTaskData]
+  )
 
-  const handelDeleteTask = (issuesNum: number) => {
-    setTaskList((prev) => prev.filter((task) => task.number !== issuesNum))
-  }
+  const handelDeleteTask = useCallback(
+    (issuesNum: number) => {
+      setTaskData((prev) => prev.filter((task) => task.number !== issuesNum))
+      setTasksLength((prev) => prev - 1)
+    },
+    [setTaskData, setTasksLength]
+  )
 
-  const handelTitleChange = (issuesNum: number, title: string) => {
-    setTaskList((prev) =>
-      prev.map((task) => {
-        if (task.number == issuesNum) {
-          task.title = title
-        }
-        return task
-      })
-    )
-  }
+  const handelTitleChange = useCallback(
+    (issuesNum: number, title: string) => {
+      setTaskData((prev) =>
+        prev.map((task) => {
+          if (task.number == issuesNum) {
+            task.title = title
+          }
+          return task
+        })
+      )
+    },
+    [setTaskData]
+  )
 
-  const handelBodyChange = (issuesNum: number, body: string) => {
-    setTaskList((prev) =>
-      prev.map((task) => {
-        if (task.number == issuesNum) {
-          task.body = body
-        }
-        return task
-      })
-    )
-  }
+  const handelBodyChange = useCallback(
+    (issuesNum: number, body: string) => {
+      setTaskData((prev) =>
+        prev.map((task) => {
+          if (task.number == issuesNum) {
+            task.body = body
+          }
+          return task
+        })
+      )
+    },
+    [setTaskData]
+  )
 
-  const handelStatusChange = (issuesNum: number, status: TaskStatus) => {
-    setTaskList((prev) =>
-      prev.map((task) => {
-        if (task.number == issuesNum) {
-          task.status = status
-        }
-        return task
-      })
-    )
-  }
+  const handelStatusChange = useCallback(
+    (issuesNum: number, status: TaskStatus) => {
+      setTaskData((prev) =>
+        prev.map((task) => {
+          if (task.number == issuesNum) {
+            task.status = status
+          }
+          return task
+        })
+      )
+    },
+    [setTaskData]
+  )
 
   const handelSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearch(event.target.value)
@@ -170,7 +186,7 @@ function HomePage() {
     const data: Task[] = await handelAllTaskFetchResponse(response)
 
     if (data && data.length > 0) {
-      setTaskList((prev) => [...prev, ...data])
+      setTaskData((prev) => [...prev, ...data])
       setNextPageNum((prev) => {
         return prev + 1
       })
@@ -182,26 +198,69 @@ function HomePage() {
   }
 
   useEffect(() => {
-    if (session && taskList.length === 0) {
+    if (session && taskData.length === 0) {
       fetchIssues(10)
     }
   }, [session])
 
+  // Generate fake data for Testing
+  async function execute() {
+    for (let i = 0; i < 10; i++) {
+      await wait(1000)
+      handelAddTask(
+        `Fake Data ${i}`,
+        'Task For Testing. Automate API requests to load 10 more items when the list is scrolled to the end until there are no more tasks left.',
+        'Done'
+      )
+    }
+  }
+  function wait(ms: number) {
+    return new Promise((resolve) => setTimeout(resolve, ms))
+  }
+
   // TaskCards
-  const TaskList = taskList.map((task) => (
-    <TaskCard
-      key={task.number}
-      repo={REPO!}
-      search={search}
-      task={task}
-      statusTags={statusTags}
-      deleteTask={handelDeleteTask}
-      editTitle={handelTitleChange}
-      editBody={handelBodyChange}
-      editStatus={handelStatusChange}
-      sendNotification={sendNotification}
-    />
-  ))
+  const generateTaskCards = useCallback(
+    (tasks: Task[]) => {
+      console.log('generateTaskCards', tasks)
+      return tasks.map((task, index) => (
+        <TaskCard
+          key={task.number}
+          index={index}
+          repo={REPO!}
+          search={search}
+          task={task}
+          statusTags={statusTags}
+          deleteTask={handelDeleteTask}
+          editTitle={handelTitleChange}
+          editBody={handelBodyChange}
+          editStatus={handelStatusChange}
+          sendNotification={sendNotification}
+        />
+      ))
+    },
+    [
+      search,
+      statusTags,
+      handelDeleteTask,
+      handelTitleChange,
+      handelBodyChange,
+      handelStatusChange,
+    ]
+  )
+
+  //TODO 了解 useCallback 與 useMemo
+
+  useEffect(() => {
+    if (!loading) {
+      const newTasks = taskData.slice(tasksLength)
+
+      if (newTasks.length > 0) {
+        const newTaskCards = generateTaskCards(newTasks)
+        setTaskCardList((prev) => [...prev, ...newTaskCards])
+        setTasksLength(taskData.length)
+      }
+    }
+  }, [taskData, generateTaskCards, loading, tasksLength])
 
   if (REPO == undefined) {
     return (
@@ -230,6 +289,20 @@ function HomePage() {
             flexDirection={'row'}
             sx={{ minWidth: { md: '600px', sm: '400px', xs: '400px' } }}
           >
+            {/* DEBUG MODE */}
+            {DEBUG && (
+              <>
+                <Button
+                  fullWidth
+                  variant="contained"
+                  onClick={() => {
+                    execute()
+                  }}
+                >
+                  Generate Fake Data
+                </Button>
+              </>
+            )}
             <Card
               sx={{
                 padding: 3,
@@ -325,11 +398,11 @@ function HomePage() {
               sendNotification={sendNotification}
             />
           )}
-          {taskList && (
+          {taskData && (
             <>
               <InfiniteScroll
                 style={{ overflow: 'hidden' }}
-                dataLength={taskList.length}
+                dataLength={taskData.length}
                 next={() => fetchIssues(10)}
                 hasMore={hasMore}
                 loader={
@@ -354,7 +427,7 @@ function HomePage() {
                   flexDirection={'column'}
                   alignItems={'center'}
                 >
-                  {sortReverse ? TaskList.reverse() : TaskList}
+                  {sortReverse ? taskCardList.reverse() : taskCardList}
                 </Box>
               </InfiniteScroll>
             </>

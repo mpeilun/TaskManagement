@@ -28,8 +28,10 @@ import EditIcon from '@mui/icons-material/Edit'
 import { red, grey, blue } from '@mui/material/colors'
 import Link from 'next/link'
 import moment from 'moment'
+import Divider from '@mui/material/Divider'
 
 function TaskCard(props: {
+  index: number
   repo: string
   task: Task
   search: string
@@ -41,6 +43,7 @@ function TaskCard(props: {
   sendNotification: (message: string, severity: Severity) => void
 }) {
   const {
+    index,
     repo,
     task,
     search,
@@ -90,9 +93,9 @@ function TaskCard(props: {
 
   if (
     !(
-      title.includes(search) ||
-      body.includes(search) ||
-      task.user.login.includes(search)
+      title.toLocaleLowerCase().includes(search.toLocaleLowerCase()) ||
+      body.toLocaleLowerCase().includes(search.toLocaleLowerCase()) ||
+      task.user.login.toLocaleLowerCase().includes(search.toLocaleLowerCase())
     )
   )
     return <></>
@@ -241,20 +244,25 @@ function TaskCard(props: {
           onChange={handelBodyChange}
         ></TextField>
       ) : (
-        <TextField
-          variant="standard"
-          disabled
-          fullWidth
-          multiline
-          sx={{
-            margin: '8px 0px',
-            padding: '0px 8px',
-            '& .MuiInputBase-input.MuiInput-input.Mui-disabled': {
-              WebkitTextFillColor: 'black',
-            },
-          }}
-          value={task.body}
-        ></TextField>
+        <Box sx={{ margin: '8px 0px', padding: '0px 8px' }}>
+          <Typography variant={'body2'}>{task.body}</Typography>
+          <Divider sx={{ margin: '16px 0px 16px 0px' }} />
+        </Box>
+        // <TextField
+        //   variant="standard"
+        //   disabled
+        //   fullWidth
+        //   multiline
+        //   rows={4}
+        //   sx={{
+        //     margin: '8px 0px',
+        //     padding: '0px 8px',
+        //     '& .MuiInputBase-input.MuiInput-input.Mui-disabled': {
+        //       WebkitTextFillColor: 'black',
+        //     },
+        //   }}
+        //   value={task.body}
+        // ></TextField>
       )}
       {isEditing && (
         <TaskStatusSelector
@@ -321,7 +329,7 @@ function TaskCard(props: {
         </Box>
       )}
       <Box
-        margin={'8px 0px'}
+        margin={'8px 0px 0px 0px'}
         display={'flex'}
         flexDirection={'row'}
         alignItems={'center'}
@@ -354,6 +362,13 @@ function TaskCard(props: {
             {'posted ' + moment(task.created_at).startOf('minute').fromNow()}
           </Typography>
         </Tooltip>
+      </Box>
+      {/* Card Index */}
+      <Box display={'flex'} justifyContent={'end'}>
+        <Typography
+          color={grey[500]}
+          sx={{ margin: '0' }}
+        >{`#${index}`}</Typography>
       </Box>
     </Card>
   )
