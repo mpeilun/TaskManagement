@@ -313,7 +313,7 @@ function HomePage() {
 
   return (
     <Box
-      sx={{ width: { md: '600px', sm: '400px', xs: '400px' } }}
+      sx={{ width: { md: '600px', sm: '350px', xs: '350px' } }}
       display="flex"
       flexDirection={'column'}
       justifyContent={'center'}
@@ -326,7 +326,7 @@ function HomePage() {
           <Box
             display={'flex'}
             flexDirection={'row'}
-            sx={{ minWidth: { md: '600px', sm: '400px', xs: '400px' } }}
+            sx={{ minWidth: { md: '600px', sm: '350px', xs: '350px' } }}
           >
             {/* DEBUG MODE */}
             {DEBUG && (
@@ -345,7 +345,7 @@ function HomePage() {
             <Card
               sx={{
                 padding: 3,
-                width: { md: '600px', sm: '400px', xs: '400px' },
+                width: { md: '600px', sm: '350px', xs: '350px' },
               }}
             >
               {/* Search bar */}
@@ -417,7 +417,7 @@ function HomePage() {
           {!isAdding && (
             <Button
               sx={{
-                minWidth: { md: '600px', sm: '400px', xs: '400px' },
+                minWidth: { md: '600px', sm: '350px', xs: '350px' },
                 margin: '8px 0px',
               }}
               fullWidth

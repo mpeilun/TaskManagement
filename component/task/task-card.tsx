@@ -108,7 +108,7 @@ function TaskCard(props: {
             display: hidden ? 'none' : 'block',
             margin: 1,
             padding: 3,
-            width: { md: '600px', sm: '400px', xs: '400px' },
+            width: { md: '600px', sm: '350px', xs: '350px' },
           }}
         >
           <Box
