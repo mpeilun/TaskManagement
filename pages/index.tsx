@@ -38,7 +38,7 @@ function HomePage() {
   const { data: session } = useSession()
 
   // Data State
-  const [taskData, setTaskData] = useState<Task[]>([])
+  // const [taskData, setTaskData] = useState<Task[]>([])
 
   // Loading State
   const [nextPageNum, setNextPageNum] = useState(1)
@@ -46,8 +46,9 @@ function HomePage() {
   const [hasMore, setHasMore] = useState(true)
 
   // TaskCard State
-  const [taskCardList, setTaskCardList] = useState<JSX.Element[]>([])
-  const [tasksLength, setTasksLength] = useState(0)
+  const [taskCards, setTaskCards] = useState<JSX.Element[]>([])
+  const memoTaskCards = useMemo(() => taskCards, [taskCards])
+  // const [tasksLength, setTasksLength] = useState(0)
   const [isAdding, setIsAdding] = useState(false)
   const [statusTags, setStatusTags] = useState<TaskStatus[]>([
     'Open',
@@ -96,62 +97,80 @@ function HomePage() {
       } else {
         const result = await handelTaskFetchResponse(response)
         console.log('add', result)
-        setTaskData((prev) => [result, ...prev])
-        setTasksLength((prev) => prev + 1)
+        setTaskCards((prev) => [...generateTaskCards([result]), ...prev])
         return true
       }
     },
-    [session, setTaskData]
+    [setTaskCards, session?.accessToken]
   )
 
   const handelDeleteTask = useCallback(
     (issuesNum: number) => {
-      setTaskData((prev) => prev.filter((task) => task.number !== issuesNum))
-      setTasksLength((prev) => prev - 1)
+      setTaskCards((prev) => {
+        return prev.filter((taskCard) => taskCard.key != issuesNum)
+      })
     },
-    [setTaskData, setTasksLength]
+    [setTaskCards]
   )
 
   const handelTitleChange = useCallback(
     (issuesNum: number, title: string) => {
-      setTaskData((prev) =>
+      setTaskCards((prev) =>
         prev.map((task) => {
-          if (task.number == issuesNum) {
-            task.title = title
+          if (task.key == issuesNum) {
+            return (
+              <TaskCard
+                {...task.props}
+                key={task.key}
+                task={{ ...task.props.task, title: title }}
+              />
+            )
           }
           return task
         })
       )
     },
-    [setTaskData]
+    [setTaskCards]
   )
 
   const handelBodyChange = useCallback(
     (issuesNum: number, body: string) => {
-      setTaskData((prev) =>
+      setTaskCards((prev) =>
         prev.map((task) => {
-          if (task.number == issuesNum) {
-            task.body = body
+          if (task.key == issuesNum) {
+            return (
+              <TaskCard
+                {...task.props}
+                key={task.key}
+                task={{ ...task.props.task, body: body }}
+              />
+            )
           }
           return task
         })
       )
     },
-    [setTaskData]
+    [setTaskCards]
   )
 
   const handelStatusChange = useCallback(
     (issuesNum: number, status: TaskStatus) => {
-      setTaskData((prev) =>
+      setTaskCards((prev) =>
         prev.map((task) => {
-          if (task.number == issuesNum) {
-            task.status = status
+          if (task.key == issuesNum) {
+            return (
+              <TaskCard
+                {...task.props}
+                key={task.key}
+                task={{ ...task.props.task, status: status }}
+              />
+            )
           }
           return task
         })
       )
     },
-    [setTaskData]
+    [setTaskCards]
   )
 
   const handelSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -173,6 +192,7 @@ function HomePage() {
       nextPageNum
     )
 
+    // Check has permission access repo
     if (!response.ok) {
       setLoading(false)
       sendNotification(
@@ -186,10 +206,8 @@ function HomePage() {
     const data: Task[] = await handelAllTaskFetchResponse(response)
 
     if (data && data.length > 0) {
-      setTaskData((prev) => [...prev, ...data])
-      setNextPageNum((prev) => {
-        return prev + 1
-      })
+      setTaskCards((prev) => [...prev, ...generateTaskCards(data)])
+      setNextPageNum((prev) => prev + 1)
     } else {
       setHasMore(false)
     }
@@ -197,11 +215,76 @@ function HomePage() {
     setLoading(false)
   }
 
+  // Initial fetch
   useEffect(() => {
-    if (session && taskData.length === 0) {
+    if (session && taskCards.length === 0) {
       fetchIssues(10)
     }
   }, [session])
+
+  // TaskCards
+  const generateTaskCards = useCallback(
+    (tasks: Task[]) => {
+      return tasks.map((task, index) => (
+        <TaskCard
+          key={task.number}
+          index={index}
+          hidden={false}
+          repo={REPO!}
+          task={task}
+          deleteTask={handelDeleteTask}
+          editTitle={handelTitleChange}
+          editBody={handelBodyChange}
+          editStatus={handelStatusChange}
+          sendNotification={sendNotification}
+        />
+      ))
+    },
+    [handelDeleteTask, handelTitleChange, handelBodyChange, handelStatusChange]
+  )
+
+  // Search Filter
+  // Search by title body and poster
+  useEffect(() => {
+    setTaskCards((prev) =>
+      prev.map((task) => {
+        const data = task.props
+        const hidden = !(
+          data.task.title
+            .toLocaleLowerCase()
+            .includes(search.toLocaleLowerCase()) ||
+          data.task.body
+            .toLocaleLowerCase()
+            .includes(search.toLocaleLowerCase()) ||
+          data.task.user.login
+            .toLocaleLowerCase()
+            .includes(search.toLocaleLowerCase())
+        )
+
+        if (hidden != task.props.hidden) {
+          return <TaskCard {...task.props} key={task.key} hidden={hidden} />
+        } else {
+          return task
+        }
+      })
+    )
+  }, [search])
+
+  // Search by status
+  useEffect(() => {
+    setTaskCards((prev) =>
+      prev.map((task) => {
+        const data = task.props
+        const hidden = !statusTags.includes(data.task.status)
+
+        if (hidden != task.props.hidden) {
+          return <TaskCard {...task.props} key={task.key} hidden={hidden} />
+        } else {
+          return task
+        }
+      })
+    )
+  }, [statusTags])
 
   // Generate fake data for Testing
   async function execute() {
@@ -217,50 +300,6 @@ function HomePage() {
   function wait(ms: number) {
     return new Promise((resolve) => setTimeout(resolve, ms))
   }
-
-  // TaskCards
-  const generateTaskCards = useCallback(
-    (tasks: Task[]) => {
-      console.log('generateTaskCards', tasks)
-      return tasks.map((task, index) => (
-        <TaskCard
-          key={task.number}
-          index={index}
-          repo={REPO!}
-          search={search}
-          task={task}
-          statusTags={statusTags}
-          deleteTask={handelDeleteTask}
-          editTitle={handelTitleChange}
-          editBody={handelBodyChange}
-          editStatus={handelStatusChange}
-          sendNotification={sendNotification}
-        />
-      ))
-    },
-    [
-      search,
-      statusTags,
-      handelDeleteTask,
-      handelTitleChange,
-      handelBodyChange,
-      handelStatusChange,
-    ]
-  )
-
-  //TODO 了解 useCallback 與 useMemo
-
-  useEffect(() => {
-    if (!loading) {
-      const newTasks = taskData.slice(tasksLength)
-
-      if (newTasks.length > 0) {
-        const newTaskCards = generateTaskCards(newTasks)
-        setTaskCardList((prev) => [...prev, ...newTaskCards])
-        setTasksLength(taskData.length)
-      }
-    }
-  }, [taskData, generateTaskCards, loading, tasksLength])
 
   if (REPO == undefined) {
     return (
@@ -398,11 +437,11 @@ function HomePage() {
               sendNotification={sendNotification}
             />
           )}
-          {taskData && (
+          {memoTaskCards && (
             <>
               <InfiniteScroll
                 style={{ overflow: 'hidden' }}
-                dataLength={taskData.length}
+                dataLength={memoTaskCards.length}
                 next={() => fetchIssues(10)}
                 hasMore={hasMore}
                 loader={
@@ -424,10 +463,10 @@ function HomePage() {
               >
                 <Box
                   display={'flex'}
-                  flexDirection={'column'}
+                  flexDirection={sortReverse ? 'column-reverse' : 'column'}
                   alignItems={'center'}
                 >
-                  {sortReverse ? taskCardList.reverse() : taskCardList}
+                  {memoTaskCards}
                 </Box>
               </InfiniteScroll>
             </>
