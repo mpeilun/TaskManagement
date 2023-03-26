@@ -11,3 +11,5 @@ Task Management 是一個基於 GitHub Repo Issue 的專案管理工具，可以
 - 使用 Next.js 可以快速部屬至線上環境
 
 ## 部屬
+
+#### favicon.icon created by Kiranshastry - Flaticon "https://www.flaticon.com/free-icons/list"
