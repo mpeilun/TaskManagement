@@ -21,6 +21,9 @@ const theme = createTheme({
     taskDone: {
       main: green[200],
     },
+    buttonGrey: {
+      main: '#c4c4c4',
+    },
   },
 })
 
@@ -32,6 +35,7 @@ declare module '@mui/material/styles' {
     taskOpen: Palette['primary']
     taskInProgress: Palette['primary']
     taskDone: Palette['primary']
+    buttonGrey: Palette['primary']
   }
 
   interface PaletteOptions {
@@ -39,12 +43,14 @@ declare module '@mui/material/styles' {
     taskOpen: PaletteOptions['primary']
     taskInProgress: PaletteOptions['primary']
     taskDone: PaletteOptions['primary']
+    buttonGrey: PaletteOptions['primary']
   }
 }
 
 declare module '@mui/material/Button' {
   interface ButtonPropsColorOverrides {
     github: true
+    buttonGrey: true
   }
 }
 

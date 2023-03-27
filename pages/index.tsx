@@ -30,6 +30,7 @@ import { grey } from '@mui/material/colors'
 import GitHubIcon from '@mui/icons-material/GitHub'
 import FilterListIcon from '@mui/icons-material/FilterList'
 import SearchIcon from '@mui/icons-material/Search'
+import ArrowRightAltIcon from '@mui/icons-material/ArrowRightAlt'
 
 const DEBUG = false
 const REPO = process.env.GITHUB_REPO
@@ -393,23 +394,41 @@ function HomePage() {
                   setStatusTags={setStatusTags}
                 />
                 {/* Sort by time */}
-                <Box
-                  sx={{ padding: 1 }}
-                  display={'flex'}
-                  flexDirection={'row'}
-                  alignItems={'center'}
+                <Button
+                  color="buttonGrey"
+                  sx={{
+                    padding: '0',
+                    margin: '16px 0 8px 0',
+                  }}
+                  fullWidth
+                  variant="outlined"
                 >
-                  <Typography color={!sortReverse ? 'primary.main' : 'inherit'}>
-                    Newest to Oldest
-                  </Typography>
-                  <Switch
-                    value={sortReverse}
-                    onChange={(even) => setSortReverse(even.target.checked)}
-                  />
-                  <Typography color={sortReverse ? 'primary.main' : 'inherit'}>
-                    Oldest to Newest
-                  </Typography>
-                </Box>
+                  <Box
+                    padding={'16px 4px 16px 4px'}
+                    width={'100%'}
+                    height={'100%'}
+                    display={'flex'}
+                    flexDirection={'row'}
+                    justifyContent={'space-evenly'}
+                    onClick={() => {
+                      setSortReverse((prev) => !prev)
+                    }}
+                  >
+                    <Typography color={'black'}>Newest</Typography>
+                    <ArrowRightAltIcon
+                      sx={{
+                        margin: '0px 8px 0px 8px',
+                        color: 'black',
+                        transform: sortReverse ? 'scaleX(-1)' : 'none',
+                        transition: (theme) =>
+                          theme.transitions.create('transform', {
+                            duration: theme.transitions.duration.standard,
+                          }),
+                      }}
+                    />
+                    <Typography color={'black'}>Oldest</Typography>
+                  </Box>
+                </Button>
               </Collapse>
             </Card>
           </Box>
