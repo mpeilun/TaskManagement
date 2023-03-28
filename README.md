@@ -5,8 +5,6 @@
 >Dcard 2023 Web Frontend Intern Homework
 
 ## [Live Demo](https://mpeilun-task-management.vercel.app)
-
-## 簡介
 Task Management 是一個基於 GitHub Repo Issue 的專案管理工具，可以透過 GitHub 登入，在指定的 Repo 中新增、更新、搜尋以及刪除任務(Issue)。
 
 ## 功能 
