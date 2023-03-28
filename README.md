@@ -2,10 +2,8 @@
 ![Vercel](http://therealsujitk-vercel-badge.vercel.app/?app=mpeilun-task-management)
 >Dcard 2023 Web Frontend Intern Homework
 
-<a href="https://mpeilun-task-management.vercel.app">
-<h3 style="text-align: center; font-size:24px;">Live Demo</h3>
-</a>
-    
+## [Live Demo](https://mpeilun-task-management.vercel.app)
+
 ## 簡介
 Task Management 是一個基於 GitHub Repo Issue 的專案管理工具，可以透過 GitHub 登入，在指定的 Repo 中新增、更新、搜尋以及刪除任務(Issue)。
 
@@ -19,7 +17,7 @@ Task Management 是一個基於 GitHub Repo Issue 的專案管理工具，可以
 ## 安裝
 ### 使用 Vercel 平台部屬 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fmpeilun%2FTaskManagement&env=NEXTAUTH_URL,NEXTAUTH_SECRET,GITHUB_ID,GITHUB_SECRET,GITHUB_REPO&envDescription=Please%20consult%20the%20GitHub%20README%20for%20additional%20information.&envLink=https%3A%2F%2Fgithub.com%2Fmpeilun%2FTaskManagement&demo-title=Task%20Management&demo-description=A%20project%20management%20tool%20based%20on%20GitHub%20Repo%20Issues%20allows%20users%20to%20log%20in%20via%20GitHub%20and%20add%2C%20update%2C%20search%2C%20and%20delete%20tasks%20(Issues)%20in%20the%20designated%20repository.&demo-url=https%3A%2F%2Fmpeilun-task-management.vercel.app%2F&demo-image=https%3A%2F%2Fmpeilun-task-management.vercel.app%2Ffavicon.png) 
-> 點擊上方按鈕
+> 點擊上方一鍵部屬
 
 ### 本地部屬
 * 從 repository clone 專案
@@ -60,18 +58,15 @@ npm run start
 > 注意在 [Github Oauth](https://github.com/settings/developers) 中，正確設定
 `Homepage URL` 與 `Authorization callback URL`
 
-:::spoiler 範例格式
-`Hinepage URL` 
+``` 格式範例
+Hinepage URL:
 https://mpeilun-task-management.vercel.app
 
-
-`Authorization callback URL` 
+Authorization callback URL:
 https://mpeilun-task-management.vercel.app/api/auth/callback/github
-
-請根據實際部屬的 **位置** 設定環境變數
-:::
-
-
+```
+**將 `https://mpeilun-task-management.vercel.app` 更換為你的 hostname**
+ 
 ## 權限規則
 Task Management 將從`env`中設定的 REPO 讀取 Issue 作為 Task，使用者在登入後才可以訪問，依照 REPO的`visibility`將有不同的權限規則。
 
@@ -108,20 +103,14 @@ Task Management 將從`env`中設定的 REPO 讀取 Issue 作為 Task，使用�
 
 <img style="max-width:320px;" src="https://i.imgur.com/Nh2AXQU.gif" />
 
-### 時間排序
+### 排序
 > 根據建⽴的時間進⾏排序。
 
 <img style="max-width:320px;" src="https://i.imgur.com/7HYjd3U.gif" />
 
-### 自動載入
-> 滾到頁面底部，發送請求獲取 10 筆數據。
-
-<img style="max-width:320px;" src="https://i.imgur.com/QCuYsno.gif" />
-
 ## 架構說明
 
 ### 目錄結構
-:::spoiler
 ```
 |-- component
 |   |-- navbar.tsx
@@ -147,9 +136,8 @@ Task Management 將從`env`中設定的 REPO 讀取 Issue 作為 Task，使用�
     |-- github-api.ts
     `-- validate.ts 
 ```
-:::
 
-#### **component**
+### **component**
 
 > 專案中使用到的組件:
 
@@ -161,7 +149,7 @@ Task Management 將從`env`中設定的 REPO 讀取 Issue 作為 Task，使用�
 - `task-card.tsx` - TaskCard: 顯示任務的詳細資訊。
 - `task-status-selector.tsx` - TaskStatusSelector: 選擇任務狀態。
 
-#### **pages**
+### **pages**
 
 > 專案中可訪問的頁面
 
@@ -171,11 +159,11 @@ Task Management 將從`env`中設定的 REPO 讀取 Issue 作為 Task，使用�
 `/signin` 
 - `signin.tsx` - 登入頁面，當用戶未登入時，跳轉到此頁面。
 
-#### **styles**
+### **styles**
 
 - `navbar.tsx`  - 定義 Material Theme。
 
-#### **types**
+### **types**
 
 > 這個目錄包含所有的 TypeScript 型別定義。
 
@@ -183,7 +171,7 @@ Task Management 將從`env`中設定的 REPO 讀取 Issue 作為 Task，使用�
 - `notification-type.ts` - 定義通知組件的型別。
 - `task-type.ts` - 定義任務的型別。
 
-#### **util**
+### **util**
 
 > 專案常用的工具函數，例如API 請求和驗證輸入資料等..。
 
